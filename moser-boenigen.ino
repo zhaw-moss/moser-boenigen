@@ -107,28 +107,15 @@ void setup() {
   // Red LED
   setRgbLed(255, 0, 0);
 
-  // Serial port initialization
-  Serial.begin(115200);
-  delay(2000);  // Wait for serial connection
-  if (!Serial) {
-    delayReset();
-  }
-
   // LoRa module initialization
-  Serial.print("Initialitze the modem...");
   if (!modem.begin(EU868)) {
-    Serial.println("- Failed to start module");
-    Serial.println("ERROR");
     delayReset();
   };
-  Serial.println("OK");
 
   // Join procedure to the network server
   uint8_t joinAttempts = 0;
   int connected = 0;
-  Serial.print("Joining network... ");
   do {
-    Serial.print(joinAttempts);
     connected = modem.joinOTAA(APP_EUI, APP_KEY);
     joinAttempts++;
     if (connected) {
@@ -138,18 +125,12 @@ void setup() {
     }
   } while (joinAttempts <= MAX_ATTEMPTS);
   if (!connected) {
-    Serial.println("ERROR");
     delayReset();
   }
-  Serial.println(" OK");
 
   // Sensor start
-  Serial.print("Searching Sensor... ");
-  if (sht.begin()) {
-    Serial.println(" OK");
-  } else {
-    Serial.println("ERROR");
-    //delayReset();
+  if (!sht.begin()) {
+    delayReset();
   }
 
   // turn off LED
@@ -177,22 +158,15 @@ void loop() {
   // read the sensor values
   sht.readBoth(&temp, &humi);
 
-  Serial.print("Temp: ");
-  Serial.println(temp);
-  Serial.print("Humi: ");
-  Serial.println(humi);
-
   // check if there was a temperature change
   if (abs(temp - lastTemp) > TEMP_HYSTERESIS) {
     toSend = true;
     lastTemp = temp;
-    Serial.println("Message scheduled due to large change");
   }
 
   // check if there has been no message for a long time
   if (now - timeSent > MIN_SEND_INTERVAL * 60000) {
     toSend = true;
-    Serial.println("Message scheduled due to long timeout");
   }
 
   // send and receive if necessary
@@ -213,9 +187,6 @@ void loop() {
 
       digitalWrite(PIN_RELAIS_1, relais1);
       digitalWrite(PIN_RELAIS_2, relais2);
-
-      Serial.print("Received: ");
-      Serial.println(rxBuf[0], HEX);
     }
   }
 
